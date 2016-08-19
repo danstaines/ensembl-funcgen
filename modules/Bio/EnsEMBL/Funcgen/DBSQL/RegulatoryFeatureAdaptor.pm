@@ -67,16 +67,13 @@ use warnings;
 use Bio::EnsEMBL::Utils::Exception qw( throw warning deprecate );
 use Bio::EnsEMBL::Funcgen::RegulatoryFeature;
 use Data::Dumper;
+use DBI qw(:sql_types);
 
-# DBI sql_types import
+# One day:
+# use base 'Bio::EnsEMBL::Feature';
 use Bio::EnsEMBL::Funcgen::DBSQL::SetFeatureAdaptor;
-
 use base qw(Bio::EnsEMBL::Funcgen::DBSQL::SetFeatureAdaptor);
 
-my %valid_attribute_features = (
-  'Bio::EnsEMBL::Funcgen::MotifFeature'     => 'motif',
-  'Bio::EnsEMBL::Funcgen::AnnotatedFeature' => 'annotated',
-);
 
 =head2 fetch_by_stable_id
 
@@ -96,7 +93,28 @@ sub fetch_by_stable_id {
     my $stable_id = shift;
     
     my $constraint = "rf.stable_id = ? and rb.is_current = true";
+    $self->bind_param_generic_fetch($stable_id, SQL_VARCHAR);
+    
+    my ($regulatory_feature) = @{$self->generic_fetch($constraint)};
+    return $regulatory_feature;
+}
+
+sub fetch_by_stable_id_RegulatoryBuild {
+    my $self             = shift;
+    my $stable_id        = shift;
+    my $regulatory_build = shift;
+
+    return $self->_fetch_by_stable_id_regulatory_build_id($stable_id, $regulatory_build->dbID);
+}
+
+sub _fetch_by_stable_id_regulatory_build_id {
+    my $self      = shift;
+    my $stable_id = shift;
+    my $regulatory_build_id = shift;
+
+    my $constraint = "rf.stable_id = ? and rf.regulatory_build_id = ?";
     $self->bind_param_generic_fetch($stable_id,           SQL_VARCHAR);
+    $self->bind_param_generic_fetch($regulatory_build_id, SQL_VARCHAR);
     
     my ($regulatory_feature) = @{$self->generic_fetch($constraint)};
     return $regulatory_feature;
@@ -168,106 +186,6 @@ sub _generic_fetch_Iterator {
     });
 }
 
-sub fetch_by_stable_id_RegulatoryBuild {
-    my $self             = shift;
-    my $stable_id        = shift;
-    my $regulatory_build = shift;
-
-    return $self->_fetch_by_stable_id_regulatory_build_id($stable_id, $regulatory_build->dbID);
-}
-
-sub _fetch_by_stable_id_regulatory_build_id {
-    my $self      = shift;
-    my $stable_id = shift;
-    my $regulatory_build_id = shift;
-
-    my $constraint = "rf.stable_id = ? and rf.regulatory_build_id = ?";
-    $self->bind_param_generic_fetch($stable_id,           SQL_VARCHAR);
-    $self->bind_param_generic_fetch($regulatory_build_id, SQL_VARCHAR);
-    
-    my ($regulatory_feature) = @{$self->generic_fetch($constraint)};
-    return $regulatory_feature;
-}
-
-=head2 _true_tables
-
-  Args       : None
-  Example    : None
-  Description: Returns the names and aliases of the tables to use for queries.
-  Returntype : List of listrefs of strings
-  Exceptions : None
-  Caller     : Internal
-  Status     : At Risk
-
-=cut
-
-sub _true_tables {
-  return (
-    [ 'regulatory_feature',  'rf'  ],
-    [ 'regulatory_activity', 'ra' ],
-    [ 'regulatory_build',    'rb'  ],
-    [ 'regulatory_evidence', 're'  ],
-  );
-}
-
-=head2 _columns
-
-  Args       : None
-  Example    : None
-  Description: PROTECTED implementation of superclass abstract method.
-               Returns a list of columns to use for queries.
-  Returntype : List of strings
-  Exceptions : None
-  Caller     : Internal
-  Status     : At Risk
-
-=cut
-
-sub _columns {
-  my $self = shift;
-
-  return qw(
-    rf.regulatory_feature_id
-    rf.seq_region_id
-    rf.seq_region_start
-    rf.seq_region_end
-    rf.seq_region_strand
-    rf.bound_start_length
-    rf.bound_end_length
-    rf.feature_type_id
-    ra.epigenome_id
-    rf.stable_id
-    ra.activity
-    rf.epigenome_count
-    re.attribute_feature_id
-    re.attribute_feature_table
-    ra.regulatory_activity_id
-    rb.analysis_id
-    rb.regulatory_build_id
-  );
-}
-
-=head2 _left_join
-
-  Args       : None
-  Example    : None
-  Description: PROTECTED implementation of superclass abstract method.
-               Returns an additional table joining constraint to use for
-			   queries.
-  Returntype : List
-  Exceptions : None
-  Caller     : Internal
-  Status     : At Risk
-
-=cut
-
-sub _left_join {
-  return (
-    ['regulatory_evidence', 'ra.regulatory_activity_id = re.regulatory_activity_id'],
-    ['regulatory_build',    'rf.regulatory_build_id = rb.regulatory_build_id']
-  );
-}
-
 sub _fake_multicell_activity {
 
   my $self = shift;
@@ -275,7 +193,7 @@ sub _fake_multicell_activity {
   
   my $multicell_regulatory_activity = Bio::EnsEMBL::Funcgen::RegulatoryActivity->new;
   $multicell_regulatory_activity->activity('ACTIVE');
-  $multicell_regulatory_activity->epigenome_id(undef);
+  $multicell_regulatory_activity->_epigenome_id(undef);
   $multicell_regulatory_activity->_is_multicell(1);
 
   my $multicell_regulatory_evidence = Bio::EnsEMBL::Funcgen::RegulatoryEvidence->new;
@@ -296,19 +214,37 @@ sub _fake_multicell_activity {
   return $multicell_regulatory_activity;
 }
 
-=head2 _objs_from_sth
+sub _true_tables {
+  return (
+    [ 'regulatory_feature',  'rf' ],
+    [ 'regulatory_build',    'rb' ],
+  );
+}
 
-  Arg [1]    : DBI statement handle object
-  Example    : None
-  Description: PROTECTED implementation of superclass abstract method.
-               Creates RegulatoryFeature objects from an executed DBI statement
-			   handle.
-  Returntype : Listref of Bio::EnsEMBL::RegulatoryFeature objects
-  Exceptions : None
-  Caller     : Internal
-  Status     : At Risk
+sub _columns {
+  my $self = shift;
 
-=cut
+  return qw(
+    rf.regulatory_feature_id
+    rf.seq_region_id
+    rf.seq_region_start
+    rf.seq_region_end
+    rf.seq_region_strand
+    rf.bound_start_length
+    rf.bound_end_length
+    rf.feature_type_id
+    rf.stable_id
+    rf.epigenome_count
+    rb.regulatory_build_id
+    rb.is_current
+    rb.analysis_id
+  );
+}
+
+# Prevent superclass from adding a clause that won't work.
+sub _default_where_clause {
+  return 'rf.regulatory_build_id = rb.regulatory_build_id';
+}
 
 sub _objs_from_sth {
   my ($self, $sth, $mapper, $dest_slice) = @_;
@@ -337,16 +273,11 @@ sub _objs_from_sth {
     $sth_fetched_bound_start_length,
     $sth_fetched_bound_end_length,
     $sth_fetched_feature_type_id,
-    $sth_fetched_epigenome_id,
     $sth_fetched_stable_id,
-    $sth_fetched_attr_id,
-    $sth_fetched_attr_type,
-    $sth_fetched_bin_string,
-    $sth_fetched_activity,
     $sth_fetched_epigenome_count,
-    $sth_fetched_regulatory_feature_epigenome_id,
+    $sth_fetched_rb_dbid,
+    $sth_fetched_rb_is_current,
     $sth_fetched_analysis_id,
-    $sth_fetched_rb_dbid
   );
 
   $sth->bind_columns (
@@ -358,15 +289,11 @@ sub _objs_from_sth {
     \$sth_fetched_bound_start_length,
     \$sth_fetched_bound_end_length,
     \$sth_fetched_feature_type_id,
-    \$sth_fetched_epigenome_id,
     \$sth_fetched_stable_id,
-    \$sth_fetched_activity,
     \$sth_fetched_epigenome_count,
-    \$sth_fetched_attr_id,
-    \$sth_fetched_attr_type,
-    \$sth_fetched_regulatory_feature_epigenome_id,
+    \$sth_fetched_rb_dbid,
+    \$sth_fetched_rb_is_current,
     \$sth_fetched_analysis_id,
-    \$sth_fetched_rb_dbid
   );
 
   my ($dest_slice_start, $dest_slice_end);
@@ -400,52 +327,6 @@ sub _objs_from_sth {
   # The current regulatory feature that is being constructed
   my $regulatory_feature_under_construction;
   
-  # The linked feature sets and their activities for the regulatory feature 
-  # that is being constructed
-  #
-  my $unique_set_of_regulatory_activities;
-  
-  # Closure that adds the components of a regulatory feature. This is called
-  # twice, so moved into a closure to avoid code duplication in the loop 
-  # below.
-  #
-  my $add_components_to_regulatory_feature_under_construction = sub {
-
-    my @flattened_regulatory_activities;
-    foreach my $current_epigenome_id (keys %$unique_set_of_regulatory_activities) {
-      push @flattened_regulatory_activities, $unique_set_of_regulatory_activities->{$current_epigenome_id};
-    }
-    
-    $regulatory_feature_under_construction->regulatory_activity(\@flattened_regulatory_activities);
-    
-    # Fake MultiCell regulatory behaviour.
-    #
-    my $multicell_regulatory_activity = $self->_fake_multicell_activity(
-      $regulatory_feature_under_construction->regulatory_activity
-    );
-
-    $regulatory_feature_under_construction->add_regulatory_activity(
-      $multicell_regulatory_activity
-    );
-
-    foreach my $current_regulatory_activity (@flattened_regulatory_activities) {
-      $current_regulatory_activity->regulatory_feature($regulatory_feature_under_construction);
-    }
-
-  };
-   
-  # Closure that resets the variables holding the components. This is called
-  # after a regulatory feature is done.
-  #
-  my $reset_components = sub {
-    $unique_set_of_regulatory_activities = {};
-  };
-
-  # Because of the way the join works the rows from the linking table will 
-  # appear multiple times. This helps creating unique links to feature sets.
-  #
-  my %seen_linked_regulatory_activity;
-  
   my $fetch_slice_with_cache = sub {
     my $seq_region_id = shift;
     
@@ -466,145 +347,55 @@ sub _objs_from_sth {
   # when a feature is not on the destination slice.
   #
   my $current_feature_not_on_destination_slice = undef;
+  my %regulatory_build_cache;
   
   ROW: while ( $sth->fetch() ) {
-
-    # The statement is a join across multiple tables. Because of the one 
-    # to many relationships between the tables the data for one regulatory
-    # feature can span multiple rows. If the dbId that is fetched is different
-    # from the one that is currently being built, this means that this row
-    # belongs to a new regulatory feature.
-    #
-    my $current_row_belongs_to_new_regulatory_feature = 
-      ! $regulatory_feature_under_construction 
-      || ($regulatory_feature_under_construction->dbID != $sth_fetched_dbID);
-
-    my %regulatory_build_cache;
-      
-    if ($current_row_belongs_to_new_regulatory_feature) {
-
-	if ($current_feature_not_on_destination_slice) {
-	
-	  # So we don't duplicate the push for the feature previous to the 
-	  # skip feature
-	  #
-	  undef $regulatory_feature_under_construction;
-	  undef $current_feature_not_on_destination_slice;
-	}
-
-	# If a regulatory feature was created in the previous iteration, it 
-	# is done now and construction can be finalised.
-	#
-	if (defined $regulatory_feature_under_construction) {
-	
-	  $add_components_to_regulatory_feature_under_construction->();
-
-	  push @feature_from_sth, $regulatory_feature_under_construction;
-	  
-	  $reset_components->();
-
-	  %seen_linked_regulatory_activity = ();
-	}
-
-	$seq_region_id = $self->get_core_seq_region_id($sth_fetched_efg_seq_region_id);
-
-	if (! $seq_region_id) {
-	  warn "Cannot get slice for eFG seq_region_id $sth_fetched_efg_seq_region_id\n".
-	    "The region you are using is not present in the current dna DB";
-	  next;
-	}
-    
-	my $analysis = $analysis_adaptor->fetch_by_dbID($sth_fetched_analysis_id);
-
-	$ftype_hash{$sth_fetched_feature_type_id} = $feature_type_adaptor  ->fetch_by_dbID($sth_fetched_feature_type_id) if ! exists $ftype_hash{$sth_fetched_feature_type_id};
-	
-	# Get the slice object
-	my ($slice, $seq_region_name) = $fetch_slice_with_cache->($seq_region_id);
-	
-	# If a destination slice was provided convert the coords
-	if ($dest_slice) {
-	
-	  $project_slice_coordinates_to_destination_slice->();
-
-	  my $current_feature_not_on_destination_slice = 
-	    $sth_fetched_seq_region_end < 1 
-	    || $sth_fetched_seq_region_start > $dest_slice_length
-	    || ( $dest_slice_sr_name ne $seq_region_name );
-
-	  next ROW
-	    if ($current_feature_not_on_destination_slice);
-
-	  $slice = $dest_slice;
-	}
-	
-	if (! exists $regulatory_build_cache{$sth_fetched_rb_dbid}) {
-	  $regulatory_build_cache{$sth_fetched_rb_dbid} = $regulatory_build_adaptor->fetch_by_dbID($sth_fetched_rb_dbid);
-	}
-
-	$regulatory_feature_under_construction = Bio::EnsEMBL::Funcgen::RegulatoryFeature->new_fast({
-	    'start'             => $sth_fetched_seq_region_start,
-	    'end'               => $sth_fetched_seq_region_end,
-	    '_bound_lengths'    => [$sth_fetched_bound_start_length, $sth_fetched_bound_end_length],
-	    'strand'            => $sth_fetched_seq_region_strand,
-	    'slice'             => $slice,
-	    'analysis'          => $analysis,
-	    'adaptor'           => $self,
-	    'dbID'              => $sth_fetched_dbID,
-	    'feature_type'      => $ftype_hash{$sth_fetched_feature_type_id},
-	    'stable_id'         => $sth_fetched_stable_id,
-	    'epigenome_count'   => $sth_fetched_epigenome_count,
- 	    '_regulatory_build' => $regulatory_build_cache{$sth_fetched_rb_dbid},
-	    });
-    }
-    
-    # Make sure there is a Bio::EnsEMBL::Funcgen::RegulatoryActivity component
-    # to hold the activity and attributes.
-    #
-    if (! exists $unique_set_of_regulatory_activities->{$sth_fetched_epigenome_id}) {
-    
-      use Bio::EnsEMBL::Funcgen::RegulatoryActivity;
-      my $regulatory_activity = Bio::EnsEMBL::Funcgen::RegulatoryActivity->new();
-      $regulatory_activity->db($self->db);
-      
-      $unique_set_of_regulatory_activities->{$sth_fetched_epigenome_id} = $regulatory_activity;
-    }
-
-    # Handle regulatory evidence from the regulatory_evidence table
-    #
-    if (defined $sth_fetched_attr_id  && ! $current_feature_not_on_destination_slice) {
-    
-
-      my $regulatory_activity = $unique_set_of_regulatory_activities->{$sth_fetched_epigenome_id};
-      my $regulatory_evidence = $regulatory_activity->regulatory_evidence;
-      
-      if ($sth_fetched_attr_type eq 'annotated') {
-	$regulatory_evidence->add_supporting_annotated_feature_id($sth_fetched_attr_id);
-      }
-      if ($sth_fetched_attr_type eq 'motif') {
-	$regulatory_evidence->add_supporting_motif_feature_id($sth_fetched_attr_id);
-      }
-    }
-
-    # Handle regulatory activity from the regulatory_feature_feature_set table
-    #
-    if (
-      ! exists $seen_linked_regulatory_activity{$sth_fetched_regulatory_feature_epigenome_id}
-      && ! $current_feature_not_on_destination_slice
-    ) {
-      $seen_linked_regulatory_activity{$sth_fetched_regulatory_feature_epigenome_id} = 1;
-
-      my $regulatory_activity = $unique_set_of_regulatory_activities->{$sth_fetched_epigenome_id};
-
-      $regulatory_activity->epigenome_id($sth_fetched_epigenome_id);
-      $regulatory_activity->activity($sth_fetched_activity);
-    }
-  }
-
-  #handle last record
-  if (defined $regulatory_feature_under_construction) {
   
-    $add_components_to_regulatory_feature_under_construction->();
-    push @feature_from_sth, $regulatory_feature_under_construction;
+    $seq_region_id = $self->get_core_seq_region_id($sth_fetched_efg_seq_region_id);
+
+    if (! $seq_region_id) {
+      warn "Cannot get slice for eFG seq_region_id $sth_fetched_efg_seq_region_id\n".
+	"The region you are using is not present in the current dna DB";
+      next;
+    }
+
+    $ftype_hash{$sth_fetched_feature_type_id}     = $feature_type_adaptor     ->fetch_by_dbID($sth_fetched_feature_type_id) if ! exists $ftype_hash{$sth_fetched_feature_type_id};
+
+    # Get the slice object
+    my ($slice, $seq_region_name) = $fetch_slice_with_cache->($seq_region_id);
+    
+    # If a destination slice was provided convert the coords
+    if ($dest_slice) {
+    
+      $project_slice_coordinates_to_destination_slice->();
+
+      my $current_feature_not_on_destination_slice = 
+	$sth_fetched_seq_region_end < 1 
+	|| $sth_fetched_seq_region_start > $dest_slice_length
+	|| ( $dest_slice_sr_name ne $seq_region_name );
+
+      next ROW
+	if ($current_feature_not_on_destination_slice);
+
+      $slice = $dest_slice;
+    }
+
+    my $regulatory_feature = Bio::EnsEMBL::Funcgen::RegulatoryFeature->new_fast({
+	'start'             => $sth_fetched_seq_region_start,
+	'end'               => $sth_fetched_seq_region_end,
+	'_bound_lengths'    => [$sth_fetched_bound_start_length, $sth_fetched_bound_end_length],
+	'strand'            => $sth_fetched_seq_region_strand,
+	'slice'             => $slice,
+	'_analysis_id'      => $sth_fetched_analysis_id,
+	'adaptor'           => $self,
+	'dbID'              => $sth_fetched_dbID,
+	'feature_type'      => $ftype_hash{$sth_fetched_feature_type_id},
+	'stable_id'         => $sth_fetched_stable_id,
+	'epigenome_count'   => $sth_fetched_epigenome_count,
+	'regulatory_build_id' => $sth_fetched_rb_dbid,
+	
+	});
+    push @feature_from_sth, $regulatory_feature;
   }
   return \@feature_from_sth;
 }
@@ -816,8 +607,6 @@ sub store {
         
       }
     }
-
-
   }
   return @regulatory_feature;
 }
@@ -988,9 +777,9 @@ sub _fetch_all_by_Slice_Epigenomes_Activity_RegulatoryBuild {
   return $all_regulatory_features;
 }
 
-sub _default_where_clause {
-  return 'ra.regulatory_feature_id = rf.regulatory_feature_id';
-}
+# sub _default_where_clause {
+#   return 'ra.regulatory_feature_id = rf.regulatory_feature_id';
+# }
 
 =head2 fetch_all_by_stable_ID
 
@@ -1033,6 +822,11 @@ sub fetch_all_by_attribute_feature {
 #   use Carp;
 #   confess("This is never used.");
 # 
+  my %valid_attribute_features = (
+    'Bio::EnsEMBL::Funcgen::MotifFeature'     => 'motif',
+    'Bio::EnsEMBL::Funcgen::AnnotatedFeature' => 'annotated',
+  );
+  
   if(! exists $valid_attribute_features{$attr_class}) {
     throw("Attribute feature must be one of:\n\t".join("\n\t", keys(%valid_attribute_features)));
   }
