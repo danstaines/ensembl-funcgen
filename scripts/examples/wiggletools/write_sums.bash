@@ -1,10 +1,10 @@
 #!/bin/bash
 
-data_directory=/nfs/production/panda/ensembl/funcgen/api_course_material/data/WiggleTools
+data_directory=/home/ensembl/data/BigWig
 
 wiggletools \
   write \
-    ./sums_deleteme.bw \
+    ./sums_deleteme.wig \
   sum  \
     $data_directory/Monocytes_CD14_PB_Roadmap_H3K27ac_ChIP-Seq_Roadmap85_bwa_samse.bw  \
     $data_directory/Lung_H3K27ac_ChIP-Seq_Roadmap85_bwa_samse.bw  \

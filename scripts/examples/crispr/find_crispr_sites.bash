@@ -1,6 +1,6 @@
 #!/bin/bash
 
-crispr_file_location=/nfs/production/panda/ensembl/funcgen/api_course_material/data/Crispr/wge_crisprs_grch38.bb
+crispr_file_location=/home/ensembl/data/Crispr/wge_crisprs_grch38.bb
 
 bigBedToBed -chrom=chr13 -start=32315474 -end=32400266 $crispr_file_location deleteme.bed
 
