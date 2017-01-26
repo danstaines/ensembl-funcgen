@@ -3,7 +3,7 @@
 # -----------------------------
 # EnsEMBL Regulation API course
 # Microarray - Probe mapping
-# Excercise 2
+# Excercise 3
 # ----------------------------
 
 use strict;
