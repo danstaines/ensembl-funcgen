@@ -1,5 +1,5 @@
 -- Copyright [1999-2015] Wellcome Trust Sanger Institute and the EMBL-European Bioinformatics Institute
--- Copyright [2016] EMBL-European Bioinformatics Institute
+-- Copyright [2016-2017] EMBL-European Bioinformatics Institute
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -134,6 +134,7 @@ CREATE TABLE `regulatory_build` (
   `feature_type_id` int(4) unsigned NOT NULL,
   `analysis_id` smallint(5) unsigned NOT NULL,
   `is_current` tinyint(1) NOT NULL DEFAULT '0',
+  `sample_regulatory_feature_id` int(10) unsigned,
   PRIMARY KEY (`regulatory_build_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
@@ -1325,14 +1326,12 @@ CREATE TABLE `meta` (
 
 -- Add necessary meta values
 INSERT INTO meta (meta_key, meta_value) VALUES ('schema_type', 'funcgen');
-INSERT INTO meta (species_id, meta_key, meta_value) VALUES (NULL, 'schema_version', '86');
+INSERT INTO meta (species_id, meta_key, meta_value) VALUES (NULL, 'schema_version', '88');
 
 -- Update and remove these for each release to avoid erroneous patching
-INSERT INTO meta (species_id, meta_key, meta_value) VALUES (NULL, 'patch', 'patch_86_87_a.sql|schema_version');
-INSERT INTO meta (species_id, meta_key, meta_value) VALUES (NULL, 'patch', 'patch_86_87_b.sql|Change data type of certain columns to facilitate foreing key constraints');
-INSERT INTO meta (species_id, meta_key, meta_value) VALUES (NULL, 'patch', 'patch_86_87_c.sql|Remove obsolete coloumns from external_feature_file');
-INSERT INTO meta (species_id, meta_key, meta_value) VALUES (NULL, 'patch', 'patch_86_87_d.sql|Add \'unknown\' as a valid gender in the epigenome table');
-INSERT INTO meta (species_id, meta_key, meta_value) VALUES (NULL, 'patch', 'patch_86_87_e.sql|Increase data_set.name length');
+INSERT INTO meta (species_id, meta_key, meta_value) VALUES (NULL, 'patch', 'patch_87_88_a.sql|schema_version');
+INSERT INTO meta (species_id, meta_key, meta_value) VALUES (NULL, 'patch', 'patch_87_88_b.sql|seq_region_name_255');
+INSERT INTO meta (species_id, meta_key, meta_value) VALUES (NULL, 'patch', 'patch_87_88_c.sql|sample_regulatory_feature_id field for regulatory build');
 
 /**
 @table meta_coord
@@ -1739,7 +1738,7 @@ CREATE TABLE `coord_system` (
 DROP TABLE IF EXISTS `seq_region`;
 CREATE TABLE `seq_region` (
   `seq_region_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(40) NOT NULL,
+  `name` varchar(255) NOT NULL,
   `coord_system_id` int(10) unsigned NOT NULL,
   `core_seq_region_id` int(10) unsigned NOT NULL,
   `schema_build` varchar(10) NOT NULL DEFAULT '',

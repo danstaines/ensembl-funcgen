@@ -5,7 +5,7 @@
 =head1 LICENSE
 
 Copyright [1999-2015] Wellcome Trust Sanger Institute and the EMBL-European Bioinformatics Institute
-Copyright [2016] EMBL-European Bioinformatics Institute
+Copyright [2016-2017] EMBL-European Bioinformatics Institute
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -236,10 +236,9 @@ sub new_fast {
 
 =head2 add_array_chip_probename
 
-  Arg [1]    : int - db ID of array_chip
-  Arg [2]    : string - probe name
-  Arg [3]    : Bio::EnsEMBL::Funcgen::Array
-  Example    : $probe->add_array_chip_probename($ac_dbid, $probename, $array);
+  Arg [1]    : string - probe name
+  Arg [2]    : Bio::EnsEMBL::Funcgen::Array
+  Example    : $probe->add_array_chip_probename($probename, $array);
   Description: Adds a probe name / array pair to a probe, allowing incremental
                generation of a probe.
   Returntype : None
