@@ -29,9 +29,6 @@ limitations under the License.
 
 =head1 SYNOPSIS
 
-  my $crispr_adaptor = Bio::EnsEMBL::Registry->get_adaptor('homo_sapiens', 'funcgen', 'CrisprSitesFile');
-  my $crispr_file = $crispr_adaptor->fetch_file;
-
 =cut
 
 package Bio::EnsEMBL::Funcgen::DBSQL::ProbeTranscriptMappingAdaptor;
