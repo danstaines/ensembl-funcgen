@@ -74,9 +74,9 @@ use vars qw( %Config );
         -type    => 'OLIGO',
         -class   => 'AFFY_UTR',
         
-        -probeset_arrays      => 1,
-        -linked_arrays        => 0,
-        -sense_interrogation  => 0,
+        -is_probeset_array      => 1,
+        -is_linked_array        => 0,
+        -has_sense_interrogation  => 0,
 
       },
 
@@ -175,9 +175,9 @@ use vars qw( %Config );
           -type    => 'OLIGO',
           -class   => 'AFFY_ST',
           
-          -probeset_arrays      => 1,
-          -linked_arrays        => 1,
-          -sense_interrogation  => 1,
+          -is_probeset_array      => 1,
+          -is_linked_array        => 1,
+          -has_sense_interrogation  => 1,
 
         },
 
@@ -224,9 +224,9 @@ use vars qw( %Config );
         -type    => 'OLIGO',
         -class   => 'ILLUMINA_WG',
 
-        -probeset_arrays      => 0,
-        -linked_arrays        => 0,
-        -sense_interrogation  => 0,
+        -is_probeset_array      => 0,
+        -is_linked_array        => 0,
+        -has_sense_interrogation  => 0,
 
       },
       
@@ -272,9 +272,9 @@ use vars qw( %Config );
         -type    => 'OLIGO',
         -class   => 'ILLUMINA_INFINIUM',
 
-        -probeset_arrays      => 0,
-        -linked_arrays        => 0,
-        -sense_interrogation  => 0,
+        -is_probeset_array      => 0,
+        -is_linked_array        => 0,
+        -has_sense_interrogation  => 0,
 
       },
     },
@@ -305,9 +305,9 @@ use vars qw( %Config );
         -type    => 'OLIGO',
         -class   => 'CODELINK',
 
-        -probeset_arrays      => 0,
-        -linked_arrays        => 1,
-        -sense_interrogation  => 0,
+        -is_probeset_array      => 0,
+        -is_linked_array        => 1,
+        -has_sense_interrogation  => 0,
       },
      },
 
@@ -339,9 +339,9 @@ use vars qw( %Config );
         -type    => 'OLIGO',
         -class   => 'AGILENT',
         
-        -probeset_arrays      => 0,
-        -linked_arrays        => 1,
-        -sense_interrogation  => 0,
+        -is_probeset_array      => 0,
+        -is_linked_array        => 1,
+        -has_sense_interrogation  => 0,
 
       },
 
@@ -425,9 +425,9 @@ use vars qw( %Config );
            -type    => 'OLIGO',
            -class   => 'WUSTL',
 
-            -probeset_arrays      => 0,
-            -linked_arrays        => 1,
-            -sense_interrogation  => 0,
+            -is_probeset_array      => 0,
+            -is_linked_array        => 1,
+            -has_sense_interrogation  => 0,
 
          },
        },
@@ -455,9 +455,9 @@ use vars qw( %Config );
            -type    => 'OLIGO',
            -class   => 'SLRI',
 
-            -probeset_arrays      => 0,
-            -linked_arrays        => 1,
-            -sense_interrogation  => 0,
+            -is_probeset_array      => 0,
+            -is_linked_array        => 1,
+            -has_sense_interrogation  => 0,
 
          },
        },
@@ -486,9 +486,9 @@ use vars qw( %Config );
            -type    => 'OLIGO',
            -class   => 'UCSF',
 
-            -probeset_arrays      => 0,
-            -linked_arrays        => 1,
-            -sense_interrogation  => 0,
+            -is_probeset_array      => 0,
+            -is_linked_array        => 1,
+            -has_sense_interrogation  => 0,
 
 
          },
@@ -518,9 +518,9 @@ use vars qw( %Config );
            -type    => 'OLIGO',
            -class   => 'NIMBLEGEN_MODENCODE',
 
-            -probeset_arrays      => 0,
-            -linked_arrays        => 1,
-            -sense_interrogation  => 0,
+            -is_probeset_array      => 0,
+            -is_linked_array        => 1,
+            -has_sense_interrogation  => 0,
 
          },
        },
@@ -556,9 +556,9 @@ use vars qw( %Config );
           -type    => 'OLIGO',
           -class   => 'PHALANX',
 
-          -probeset_arrays      => 0,
-          -linked_arrays        => 1,
-          -sense_interrogation  => 0,
+          -is_probeset_array      => 0,
+          -is_linked_array        => 1,
+          -has_sense_interrogation  => 0,
 
         },
      },
@@ -591,9 +591,9 @@ use vars qw( %Config );
         -type    => 'OLIGO',
         -class   => 'LEIDEN',
 
-        -probeset_arrays      => 0,
-        -linked_arrays        => 1,
-        -sense_interrogation  => 0,
+        -is_probeset_array      => 0,
+        -is_linked_array        => 1,
+        -has_sense_interrogation  => 0,
 
       },
     },
@@ -626,9 +626,9 @@ use vars qw( %Config );
           -type    => 'OLIGO',
           -class   => 'STEMPLE_LAB_SANGER',
           
-          -probeset_arrays      => 0,
-          -linked_arrays        => 1,
-          -sense_interrogation  => 0,
+          -is_probeset_array      => 0,
+          -is_linked_array        => 1,
+          -has_sense_interrogation  => 0,
 
         },
       },
